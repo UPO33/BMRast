@@ -4,6 +4,9 @@
 #include "stdafx.h"
 #include "BMRast.h"
 
+#include "Surface.h"
+
+CSurface* gSurface;
 #define MAX_LOADSTRING 100
 
 // Global Variables:
@@ -26,7 +29,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: Place code here.
-
+	gSurface = CSurface::Create(800, 600);
+	gSurface->Fill(UBGRAColor(255, 255, 255, 255));
+	gSurface->DrawLine(0, 0, 100, 100, UBGRAColor(0, 0, 255, 255));
+	
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_BMRAST, szWindowClass, MAX_LOADSTRING);

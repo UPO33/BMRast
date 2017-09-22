@@ -7,7 +7,18 @@
 
 inline unsigned UBGRAColor(uint8_t b, uint8_t g, uint8_t r, uint8_t a)
 {
-	return 0;
+	union 
+	{
+		uint8_t bgra[4];
+		unsigned color;
+	};
+
+	bgra[0] = b;
+	bgra[1] = g;
+	bgra[2] = r;
+	bgra[3] = a;
+
+	return color;
 }
 class CSurface
 {
@@ -51,49 +62,11 @@ public:
 	{
 		memset(GetPixels(), color, GetImageSizeInBytes());
 	}
-	void DrawLine(unsigned x0, unsigned y0, unsigned x1, unsigned y1, ColorT color)
-	{
-		int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
-		int dy = abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
-		int err = (dx > dy ? dx : -dy) / 2, e2;
-
-		for (;;)
-		{
-			*GetPixel(x0, y0) = color;
-
-			if (x0 == x1 && y0 == y1)
-				break;
-			e2 = err;
-			if (e2 > -dx)
-			{
-				err -= dy; x0 += sx;
-			}
-			if (e2 < dy)
-			{
-				err += dx; y0 += sy;
-			}
-		}
-	}
-	void DrawRectSolid(unsigned x, unsigned y, unsigned w, unsigned h, ColorT color)
-	{
-		w = min(w, mWidth);
-		h = min(h, mHeight);
-
-		for (; y < h; y++)
-		{
-			for (; x < w; x++)
-			{
-				*GetPixel(x, y) = color;
-			}
-		}
-	}
-	void DrawSurface(unsigned dstX, unsigned dstY, const CSurface* pSrc, unsigned srcX, unsigned srcY, unsigned w, unsigned h)
-	{
-
-	}
-	void DrawSurfaceRotated(unsigned dstX, unsigned dstY, const CSurface* pSrc, unsigned srcX, unsigned srcY, unsigned w, unsigned h, unsigned rotationInDegrees)
-	{
-
-	}
+	void DrawLine(int x0, int y0, int x1, int y1, ColorT color);
+	void FillCircle(unsigned x, unsigned y, unsigned radius, ColorT color);
+	void FillRect(unsigned x, unsigned y, unsigned w, unsigned h, ColorT color);
+	void DrawSurface(unsigned dstX, unsigned dstY, const CSurface* pSrc);
+	void DrawSurface(unsigned dstX, unsigned dstY, const CSurface* pSrc, unsigned srcX, unsigned srcY, unsigned w, unsigned h);
+	void DrawSurface(unsigned dstX, unsigned dstY, const CSurface* pSrc, unsigned rotationDegree, unsigned originX, unsigned originY);
 
 };

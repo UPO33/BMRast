@@ -30,12 +30,21 @@
     <ClInclude Include="BMRast.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Int2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Surface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BMRast.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Surface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
