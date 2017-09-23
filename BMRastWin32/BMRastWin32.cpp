@@ -6,9 +6,13 @@
 #include <iostream>
 
 #include "../BMRast/Surface.h"
+#include "../BMRast/Utility.h"
 
 CSurface* gSurface;
 CSurface* gSurfaceMandelbort;
+CSurface* gNormalLineSurface;
+CSurface* gAALlineSurface;
+CSurface* gTestRect;
 
 #define MAX_LOADSTRING 100
 
@@ -23,41 +27,95 @@ BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
+enum ETest
+{
+	ET_LineAALine,
+	ET_Blend,
+
+	ET_Max
+};
+ETest gTest = ET_Blend;
+
 void UFillSurface()
 {
+	gSurface->Fill(RGB(0,0,0));
+
+// 	for(unsigned i = 0; i < 66; i++)
+// 	{
+// 		gSurface->DrawLine(rand() % 1000, rand() % 1000, rand() % 1000, rand() % 1000, rand() % 8, RGB(0, 255, 0));
+// 		gSurface->DrawLineAA(rand() % 1000, rand() % 1000, rand() % 1000, rand() % 1000, RGB(0, 0, 255));
+// 	}
+	{
+
+		gSurface->DrawSurfaceRotatedCenterAA(Int2(128, 128), gSurfaceMandelbort, 30);
+		//gSurface->DrawSurfaceRotatedCenterAA(Int2(333, 333), gSurfaceMandelbort, 30);
+		gSurface->DrawLineAA(Int2(0,0), Int2(300, 300),  UMakeBGRAColor(0,0, 255, 0), 3);
+		
+	}
+
+	return;
+
+	//////////////////////////////////////////////////////////////////////////
+	if(gTest == ET_LineAALine)
+	{
+		gSurface->DrawSurface(0,0, gNormalLineSurface);
+		gSurface->DrawSurface(400,0, gAALlineSurface);
+		return;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	if(gTest == ET_Blend)
+	{
+		gSurface->FillMandelbortFractal();
+
+		for(unsigned i = 0; i < 32; i++)
+		{
+			gSurface->BlendRect(rand() % 600, rand() % 600,  rand() % 32 + 32, rand() % 32 + 32, UMakeBGRAColor(rand() % 255, 0, 0, rand() % 255));
+			gSurface->DrawSurfaceRotatedCenter(Int2(rand() % 600, rand() % 600), gSurfaceMandelbort, rand() % 360);
+		}
+
+		gSurface->DrawLineAA(0,0, 200, 200, UMakeBGRAColor(0, 0, 255, 255));
+		gSurface->DrawLineAA(1,0, 200 + 1, 200, UMakeBGRAColor(0, 0, 255, 255));
+		gSurface->DrawLineAA(2,0, 200 + 2, 200, UMakeBGRAColor(0, 0, 255, 255));
+
+		return;
+	}
+	
 	static unsigned gRotation = 0;
 
-	gSurface->Fill(RGB(0,0,0));
-	//gSurface->FillMandelbortFractal();
-	gSurface->FillRect(0,0, 32, 32, RGB(255, 0,0));
-	gSurface->FillRect(300, 300, 32, 32, RGB(255, 0,0));
 	
-
+	//gSurface->FillMandelbortFractal();
 	
 	gSurface->DrawSurfaceRotatedCenter(Int2(64,64), gSurfaceMandelbort, gRotation);
 	gSurface->DrawSurfaceRotated(Int2(200, 200), gSurfaceMandelbort, gRotation, Int2(0,0));
 
-	gSurface->SetPixel<true>( 64, 64,  4, RGB(255, 255, 0));
-	gSurface->SetPixel<true>( 200, 200,  4, RGB(255, 255, 0));
+	gSurface->SetPixel( 64, 64,  4, RGB(255, 255, 0));
+	gSurface->SetPixel( 200, 200,  4, RGB(255, 255, 0));
 
-	gSurface->DrawLineAA(0,0, 200, 200, RGB(0, 0, 255));
-
-	gSurface->DrawLineAA( 200, 200, 200 + sin((float)gRotation) * 100, 200 + cos((float)gRotation) * 100, RGB(0, 0, 255));
+	{
+		gSurface->DrawLineAA(0, 0, 400, 300, RGB(255, 0, 0));
+		gSurface->DrawLine(0 + 100, 0, 400 + 100, 300, 1, RGB(255, 0, 0));
+	}
 	
 
-	//gRotation += 1;
-	return;
+	//gSurface->DrawLineAA( 200, 200, 200 + sin((float)gRotation) * 100, 200 + cos((float)gRotation) * 100, RGB(255, 255, 255));
+	//gSurface->DrawLine( 400, 400, 400 + sin((float)gRotation) * 100, 400 + cos((float)gRotation) * 100, RGB(255, 255, 255));
 
-	for(unsigned i = 0; i < 8; i++)
+	gRotation += 10;
+
+	for(unsigned i = 0; i < 66; i++)
 	{
-		gSurface->FillRect(rand() % 600, rand() % 600,  32, 32, RGB(255, 0, 0));
+		gSurface->DrawLine(rand() % 1000, rand() % 1000, rand() % 1000, rand() % 1000, 1, RGB(0, 255, 0));
+		gSurface->DrawLineAA(rand() % 1000, rand() % 1000, rand() % 1000, rand() % 1000, RGB(0, 0, 255));
 	}
+
+
+
 	for(unsigned i = 0; i < 8; i++)
 	{
 		int x = rand() % 600;
 		int y = rand() % 600;
 		gSurface->DrawSurfaceRotatedCenter(Int2(x, y), gSurfaceMandelbort, rand() % 360);
-		gSurface->SetPixel<true>(x, y, 4, RGB(255, 255, 255));
+		gSurface->SetPixel(x, y, 4, RGB(255, 255, 255));
 	}
 
 
@@ -66,15 +124,19 @@ void UFillSurface()
 		gSurface->DrawVerticalLine(0, 1000, rand() % 600, rand() % 8, RGB(255, 0,0));
 		gSurface->DrawHorizontalLine(0, 1000, rand() % 600, rand() % 8, RGB(255, 0, 0));
 	}
-	for(unsigned i = 0; i < 6; i++)
+
+	for(unsigned i = 0; i < 8; i++)
 	{
-		gSurface->DrawLine(rand() % 1000, rand() % 1000, rand() % 1000, rand() % 1000, rand() % 16, RGB(0, 255, 0));
+		gSurface->BlendRect(rand() % 600, rand() % 600,  32, 32, RGB(255, 0, 0));
 	}
+
+
 }
 // int APIENTRY _tWinMain(HINSTANCE hInstance,
 //                      HINSTANCE hPrevInstance,
 //                      LPTSTR    lpCmdLine,
 //                      int       nCmdShow)
+//////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
  	// TODO: Place code here.
@@ -89,7 +151,27 @@ int main(int argc, char** argv)
 
 	std::cout << std::hex << ssss;
 
+	//line test
+	{
+		unsigned w = 400;
+		unsigned h = 400;
+		gNormalLineSurface = CSurface::Create(w, h);
+		gNormalLineSurface->FillGradient();
+		gAALlineSurface = CSurface::Create(w, h);
+		gAALlineSurface->FillGradient();
+		for(int i = 0; i < 36; i++)
+		{
+			int xx = sin(i * DEG2RAD * 10) * 150;
+			int yy = cos(i * DEG2RAD * 10) * 150;
+			gNormalLineSurface->DrawLine(w/2, h/2, w/2 + xx, h/2 + yy, 1, RGB(255, 0,0));
+			gAALlineSurface->DrawLineAA(w/2, h/2, w/2 + xx, h / 2 + yy, RGB(255, 0,0));
+		}
+	}
 
+	{
+		gTestRect = CSurface::Create(100, 8);
+		gTestRect->Fill(UMakeBGRAColor(0, 0, 255, 0));
+	}
 	gSurfaceMandelbort = CSurface::Create(64, 64);
 	gSurfaceMandelbort->Fill(RGB(0,0,0));
 	gSurfaceMandelbort->FillMandelbortFractal();
@@ -128,9 +210,9 @@ int main(int argc, char** argv)
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		UFillSurface();
-		InvalidateRect(msg.hwnd, NULL, false);
-		Sleep(100);
+		//UFillSurface();
+		//InvalidateRect(msg.hwnd, NULL, false);
+		//Sleep(100);
 	}
 
 	return (int) msg.wParam;
@@ -277,7 +359,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			UFillSurface();
 			InvalidateRect(hWnd, NULL, true);
 		}break;
+	case WM_KEYDOWN:
+		{
+			if(wParam == 'N')
+			{	
+				gTest = (ETest)((gTest + 1) % ET_Max);
+				UFillSurface();
+				InvalidateRect(hWnd, NULL, true);
+			}
+			if(wParam == 'P')
+			{
+				gTest = (ETest)((gTest - 1) % ET_Max);
+				UFillSurface();
+				InvalidateRect(hWnd, NULL, true);
+			}
 
+
+		}break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;

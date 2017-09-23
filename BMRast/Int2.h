@@ -62,7 +62,6 @@ ZZInt2CmpInt2(>=)
 ZZInt2CmpInt2(<=)
 
 
-static const float DEG2RAD = 3.141592f / 180.0f;
 
 inline Int2 URotatePoint(int x, int y, float s, float c)
 {
@@ -107,4 +106,10 @@ inline Int2 URotatePoint(Int2 p, float angle, int cx, int cy)
 	p.x = xnew + cx;
 	p.y = ynew + cy;
 	return p;
+}
+
+inline Int2 UGetLineNormal(Int2 a, Int2 b)
+{
+	Int2 delta = b - a;
+	return Int2(-delta.y, delta.x);
 }

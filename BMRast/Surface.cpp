@@ -212,13 +212,15 @@ const rgb_t jet_colormap[1000] = {
 	{122,   0,   9}, {117,   0,  18}, {112,   0,  27}, {107,   0,  36}, {102,   0,  45}
 };
 
+
+
 void CSurface::FillMandelbortFractal()
 {
 	double    cr,    ci;
 	double nextr, nexti;
 	double prevr, previ;
 
-	const unsigned int max_iterations = 1000;
+	const unsigned int max_iterations = 100;
 
 	for (unsigned int y = 0; y < mHeight; ++y)
 	{
@@ -258,8 +260,107 @@ void CSurface::FillMandelbortFractal()
 	}
 }
 
+void CSurface::FillRnadom()
+{
+	unsigned ii = rand();
+	
+	if(mPixelFormat == EPF_BGRA_UINT32)
+	{
+		for(int y = 0; y < mHeight; y++)
+		{
+			for(int x = 0; x < mWidth; x++)
+			{
+				srand(ii + x / 8 );
+				uint32* pPixel = (uint32*)GetPixel(x, y);
+				*pPixel = UMakeBGRAColor(rand() % 255, rand() % 255, rand() % 255, 255);
+			}
+		}
+	}
+}
 
-#define plot_(X,Y,D) *GetPixel(X, Y) = color
+void CSurface::FillGradient()
+{
+	if(mPixelFormat == EPF_BGRA_UINT32)
+	{
+		for(int y = 0; y < mHeight; y++)
+		{
+			for(int x = 0; x < mWidth; x++)
+			{
+				uint32* pPixel = (uint32*)GetPixel(x, y);
+				*pPixel = UMakeBGRAColor(0, y * 255 / mHeight, x * 255 / mWidth, 255);
+			}
+		}
+	}
+}
+
+inline uint32 rgb_interp(uint32 src, uint32 dst, uint32 t) 
+{
+	assert(t <= 255);
+	const uint32 s = 255 - t;
+#if defined(__LITTLE_ENDIAN__)
+	return (
+		(((((src >> 0)  & 0xff) * s +
+		((dst >> 0)  & 0xff) * t) >> 8)) |
+		(((((src >> 8)  & 0xff) * s +
+		((dst >> 8)  & 0xff) * t)     )  & ~0xff) |
+		(((((src >> 16) & 0xff) * s +
+		((dst >> 16) & 0xff) * t) << 8)  & ~0xffff) |
+		0xff000000
+		);
+#else
+	return (
+		(((((src >> 24) & 0xff) * s +
+		((dst >> 24) & 0xff) * t) << 16) & ~0xffffff) |
+		(((((src >> 16) & 0xff) * s +
+		((dst >> 16) & 0xff) * t) << 8)  & ~0xffff) |
+		(((((src >> 8)  & 0xff) * s +
+		((dst >> 8)  & 0xff) * t)     )  & ~0xff) |
+		0xff
+		);
+#endif
+}
+inline uint32 rgba_interp(uint32 src, uint32 dst, uint32 t) 
+{
+	//assert(t <= 255);
+	const uint32 s = 255 - t;
+	return (
+		(((((src >> 0)  & 0xff) * s +
+		((dst >> 0)  & 0xff) * t) >> 8)) |
+		(((((src >> 8)  & 0xff) * s +
+		((dst >> 8)  & 0xff) * t)     )  & ~0xff) |
+		(((((src >> 16) & 0xff) * s +
+		((dst >> 16) & 0xff) * t) << 8)  & ~0xffff) |
+		(((((src >> 24) & 0xff) * s +
+		((dst >> 24) & 0xff) * t) << 16) & ~0xffffff)
+		);
+}
+//using  float
+inline uint32 rgba_interpF(uint32 src, uint32 dst, uint32 t) 
+{
+	assert(t <= 255);
+
+	float ft = t / 255.0f;
+
+	ColorBGRA* ca = (ColorBGRA*)&src;
+	ColorBGRA* cb = (ColorBGRA*)&dst;
+
+	int fr = (int)(ULerp(ca->r, cb->r, ft));
+	int fg = (int)(ULerp(ca->g, cb->g, ft));
+	int fb = (int)(ULerp(ca->b, cb->b, ft));
+	int fa = (int)(ULerp(ca->a, cb->a, ft));
+
+	return UMakeBGRAColor(fb, fg, fr, fa);
+}
+//#define plot_(X,Y,D) *GetPixel(X, Y) = color
+#define plot_(X,Y,D)\
+if(IsInBound(X, Y)){\
+uint32* pPixel = (uint32*)GetPixel(X, Y);\
+*pPixel = rgba_interp(*pPixel, color, D * 255);\
+}\
+
+
+
+
 
 #define ipart_(X) ((int)(X))
 #define round_(X) ((int)(((double)(X))+0.5))
@@ -270,9 +371,86 @@ void CSurface::FillMandelbortFractal()
 
 
 
+void CSurface::SetPixel(int x, int y, int penSize, ColorT color)
+{
+	switch (penSize)
+	{
+	case 1  : SetPixel(x,y, color);
+		break;
+
+	case 2  : 
+		{
+			//P0
+			//00
+
+			SetPixel(x    , y    , color);
+			SetPixel(x + 1, y    , color);
+			SetPixel(x + 1, y + 1, color);
+			SetPixel(x    , y + 1, color);
+
+		}
+		break;
+
+	case  3 : 
+		{
+			SetPixel(x    , y - 1, color);
+			SetPixel(x - 1, y - 1, color);
+			SetPixel(x + 1, y - 1, color);
+
+			SetPixel(x    , y    , color);
+			SetPixel(x - 1, y    , color);
+			SetPixel(x + 1, y    , color);
+
+			SetPixel(x    , y + 1, color);
+			SetPixel(x - 1, y + 1, color);
+			SetPixel(x + 1, y + 1, color);
+
+		};
+		break;
+		break;
+	default:
+		{
+			for(int i = -(penSize / 2); i <= penSize / 2; i++)
+			{
+				for(int j = -(penSize / 2); j <= penSize / 2; j++)
+				{
+					SetPixel(x + i, y + j, color);
+				}
+			}
+			return;
+
+		}
+	}
+}
+
+void CSurface::DrawHorizontalLine(int x0, int x1, int y, int thickness, ColorT color)
+{
+	if (x0 > x1)
+	{
+		std::swap(x0, x1);
+	}
+
+	for (; x0 <= x1; x0++)
+	{
+		SetPixel(x0, y, thickness, color);
+	}
+}
+
+void CSurface::DrawVerticalLine(int y0, int y1, int x, int thickness, ColorT color)
+{
+	if(y0 > y1)
+	{
+		std::swap(y0, y1);
+	}
+
+	for(; y0 <= y1; y0++)
+	{
+		SetPixel(x, y0, thickness, color);
+	}
+}
+
 void CSurface::DrawLineAA(int x1, int y1, int x2, int y2, ColorT color)
 {
-	
 	float dx = (float)x2 - (float)x1;
 	float dy = (float)y2 - (float)y1;
 
@@ -337,6 +515,18 @@ void CSurface::DrawLineAA(int x1, int y1, int x2, int y2, ColorT color)
 	}
 }
 
+
+
+void CSurface::DrawLineAA(Int2 a, Int2 b, ColorT color, int thickness)
+{
+	Int2 delta = b - a;
+	Int2 n = UGetLineNormal(a, b) / Int2(300, 300);
+
+	DrawLineAA(a - n, b - n, color);
+	DrawLineAA(a, b, color);
+	DrawLineAA(a + n, b + n, color);
+}
+
 #undef swap_
 #undef plot_
 #undef ipart_
@@ -344,49 +534,111 @@ void CSurface::DrawLineAA(int x1, int y1, int x2, int y2, ColorT color)
 #undef round_
 #undef rfpart_
 
-void CSurface::DrawLine(int x0, int y0, int x1, int y1, ColorT color)
+// void CSurface::DrawLine(int x0, int y0, int x1, int y1, ColorT color)
+// {
+// 	x0 = UClamp(x0, 0, mWidth - 1);
+// 	y0 = UClamp(y0, 0, mHeight - 1);
+// 	
+// 	x1 = UClamp(x1, 0, mWidth -1);
+// 	y1 = UClamp(y1, 0, mHeight - 1);
+// 
+// 	if(x0 == x1 && y0 == y1) return;
+// 
+// 	int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+// 	int dy = abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+// 	int err = (dx > dy ? dx : -dy) / 2, e2;
+// 
+// 	for (;;)
+// 	{
+// 		*GetPixel(x0, y0) = color;
+// 
+// 		if (x0 == x1 && y0 == y1)
+// 			break;
+// 
+// 		e2 = err;
+// 		if (e2 > -dx)
+// 		{
+// 			err -= dy; x0 += sx;
+// 		}
+// 		if (e2 < dy)
+// 		{
+// 			err += dx; y0 += sy;
+// 		}
+// 	}
+// }
+// 
+
+void CSurface::DrawLine(int x1, int y1, int x2, int y2, unsigned thickness, ColorT color)
 {
-	x0 = UClamp(x0, 0, mWidth - 1);
-	y0 = UClamp(y0, 0, mHeight - 1);
-	
-	x1 = UClamp(x1, 0, mWidth -1);
-	y1 = UClamp(y1, 0, mHeight - 1);
+	int steep = 0;
+	int sx    = ((x2 - x1) > 0) ? 1 : -1;
+	int sy    = ((y2 - y1) > 0) ? 1 : -1;
+	int dx    = abs(x2 - x1);
+	int dy    = abs(y2 - y1);
 
-	if(x0 == x1 && y0 == y1) return;
-
-	int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
-	int dy = abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
-	int err = (dx > dy ? dx : -dy) / 2, e2;
-
-	for (;;)
+	if (dy > dx)
 	{
-		*GetPixel(x0, y0) = color;
+		std::swap(x1,y1);
+		std::swap(dx,dy);
+		std::swap(sx,sy);
 
-		if (x0 == x1 && y0 == y1)
-			break;
-
-		e2 = err;
-		if (e2 > -dx)
-		{
-			err -= dy; x0 += sx;
-		}
-		if (e2 < dy)
-		{
-			err += dx; y0 += sy;
-		}
+		steep = 1;
 	}
+
+	int e = 2 * dy - dx;
+
+	for (int i = 0; i < dx; ++i)
+	{
+		if (steep)
+			SetPixel(y1, x1, thickness, color);
+		else
+			SetPixel(x1, y1, thickness, color);
+
+		while (e >= 0)
+		{
+			y1 += sy;
+			e -= (dx << 1);
+		}
+
+		x1 += sx;
+		e  += (dy << 1);
+	}
+
+	SetPixel(x2,y2, thickness, color);
 }
-struct ColorBGRA
+
+
+void CSurface::DrawGradientLine(Int2 a, Int2 b, unsigned thickness, ColorT color)
 {
-	unsigned char b;
-	unsigned char g;
-	unsigned char r;
-	unsigned char a;
-};
+	
+}
 
 void CSurface::BlendRect(unsigned x, unsigned y, unsigned w, unsigned h, ColorT color)
 {
-	UCHECK(false);
+	x = std::min(x, mWidth);
+	y = std::min(y, mHeight);
+
+	w = std::min(x + w, mWidth);
+	h = std::min(y + h, mHeight);
+
+	
+	if(mPixelFormat == EPF_BGRA_UINT32)
+	{
+		for (unsigned yy = y; yy < h; yy++)
+		{
+			for (unsigned xx = x; xx < w; xx++)
+			{
+				uint32* pixel = (uint32*)GetPixel(xx, yy);
+				uint32 a = (color & 0xFF000000) >> 24;
+				*pixel = rgba_interp(*pixel, color, a);	
+
+			}
+		}
+	}
+	else
+	{
+		UCHECK(false);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -527,4 +779,71 @@ void CSurface::DrawSurfaceRotatedCenter(Int2 dstOffest, const CSurface* pSrc, in
 
 		}
 	}
+}
+
+void CSurface::DrawSurfaceRotatedCenterAA(Int2 dstOffset, const CSurface* pSrc, int rotationDegree)
+{
+	float angleRadian = rotationDegree * DEG2RAD;
+
+	float sinValue = sin(angleRadian);
+	float cosValue = cos(angleRadian);
+
+
+	Int2 leftTop = URotatePoint(0,0, sinValue, cosValue);
+	Int2 rightTop = URotatePoint(pSrc->mWidth, 0, sinValue,cosValue);
+	Int2 rightBottom = URotatePoint(pSrc->mWidth, pSrc->mHeight, sinValue, cosValue);
+	Int2 leftBottom = URotatePoint(0, pSrc->mHeight, sinValue, cosValue);
+
+	Int2 minPoint = Int2::Min(leftTop, Int2::Min(rightTop, Int2::Min(rightBottom, leftBottom)));
+	Int2 maxPoint = Int2::Max(leftTop, Int2::Max(rightTop, Int2::Max(rightBottom, leftBottom)));
+
+	Int2 newSize = maxPoint - minPoint;
+	Int2 halfSize = newSize / Int2(2, 2);
+
+	sinValue = sin(-angleRadian);
+	cosValue = cos(-angleRadian);
+
+
+	int sinI = (int)(sinValue * 2048);
+	int cosI = (int)(cosValue * 2048);
+
+	for(unsigned x = 0; x < newSize.x; x++)
+	{
+		for(unsigned y = 0; y < newSize.y;  y++)
+		{
+			Int2 p = Int2(x, y) + dstOffset - halfSize;
+			if(p > Int2(0,0) && p < Int2(mWidth, mHeight))
+			{
+				ColorT* dstPixel = (ColorT*)GetPixel(p);
+				Int2 rotatedPoint = URotatePoint(x + minPoint.x, y + minPoint.y, sinValue, cosValue);
+
+				if(rotatedPoint >= Int2(0,0) && rotatedPoint < Int2(pSrc->Width(), pSrc->Height()))
+				{
+					ColorT srcPixel = pSrc->BilinearSample(Int2(rotatedPoint.x, rotatedPoint.y));
+					*dstPixel = srcPixel;
+				}
+			}
+
+		}
+	}
+}
+
+void CSurface::DrawCircle(int x, int y, int radius, ColorT color)
+{
+}
+
+CSurface::ColorT CSurface::BilinearSample(Int2 xy) const
+{
+	Int2 tl = xy - Int2(-1, -1);
+	Int2 tr = xy - Int2(1, -1);
+	Int2 br = xy - Int2(1, 1);
+	Int2 bl = xy - Int2(-1, 1);
+
+
+
+
+	return rgba_interp(
+		rgba_interp(*GetPixel(tl), *GetPixel(br), 128), 
+		rgba_interp(*GetPixel(tr), *GetPixel(bl), 128), 128);
+
 }
