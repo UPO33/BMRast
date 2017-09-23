@@ -1,9 +1,12 @@
 #pragma once
 
 #include <assert.h>
+#include <math.h>
+#include <algorithm>
 
 #define UCHECK(_Expression) (void)( (!!(_Expression)) || (__debugbreak(), 0) )
 
+#define NOMINMAX
 
 inline int UClamp(int value, int min, int max)
 {
@@ -17,3 +20,4 @@ inline int UClamp(int value, int min, int max)
 inline long double log2(const long double x){
 	return log(x) * M_LOG2E;
 }
+

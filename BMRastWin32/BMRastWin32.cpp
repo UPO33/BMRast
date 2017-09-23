@@ -25,11 +25,28 @@ INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 void UFillSurface()
 {
+	static unsigned gRotation = 0;
+
 	gSurface->Fill(RGB(0,0,0));
 	//gSurface->FillMandelbortFractal();
 	gSurface->FillRect(0,0, 32, 32, RGB(255, 0,0));
 	gSurface->FillRect(300, 300, 32, 32, RGB(255, 0,0));
 	
+
+	
+	gSurface->DrawSurfaceRotatedCenter(Int2(64,64), gSurfaceMandelbort, gRotation);
+	gSurface->DrawSurfaceRotated(Int2(200, 200), gSurfaceMandelbort, gRotation, Int2(0,0));
+
+	gSurface->SetPixel<true>( 64, 64,  4, RGB(255, 255, 0));
+	gSurface->SetPixel<true>( 200, 200,  4, RGB(255, 255, 0));
+
+	gSurface->DrawLineAA(0,0, 200, 200, RGB(0, 0, 255));
+
+	gSurface->DrawLineAA( 200, 200, 200 + sin((float)gRotation) * 100, 200 + cos((float)gRotation) * 100, RGB(0, 0, 255));
+	
+
+	//gRotation += 1;
+	return;
 
 	for(unsigned i = 0; i < 8; i++)
 	{
@@ -37,14 +54,19 @@ void UFillSurface()
 	}
 	for(unsigned i = 0; i < 8; i++)
 	{
-		gSurface->DrawSurface(rand() % 600, rand() % 600, gSurfaceMandelbort);
+		int x = rand() % 600;
+		int y = rand() % 600;
+		gSurface->DrawSurfaceRotatedCenter(Int2(x, y), gSurfaceMandelbort, rand() % 360);
+		gSurface->SetPixel<true>(x, y, 4, RGB(255, 255, 255));
 	}
+
+
 	for(unsigned i = 0; i < 3; i++)
 	{
-		gSurface->DrawVerticalLine(0, 1000, rand() % 600, 3, RGB(255, 0,0));
-		gSurface->DrawHorizontalLine(0, 1000, rand() % 600, 3, RGB(255, 0, 0));
+		gSurface->DrawVerticalLine(0, 1000, rand() % 600, rand() % 8, RGB(255, 0,0));
+		gSurface->DrawHorizontalLine(0, 1000, rand() % 600, rand() % 8, RGB(255, 0, 0));
 	}
-	for(unsigned i = 0; i < 8; i++)
+	for(unsigned i = 0; i < 6; i++)
 	{
 		gSurface->DrawLine(rand() % 1000, rand() % 1000, rand() % 1000, rand() % 1000, rand() % 16, RGB(0, 255, 0));
 	}
@@ -106,6 +128,9 @@ int main(int argc, char** argv)
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+		UFillSurface();
+		InvalidateRect(msg.hwnd, NULL, false);
+		Sleep(100);
 	}
 
 	return (int) msg.wParam;

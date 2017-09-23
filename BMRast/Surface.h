@@ -62,6 +62,10 @@ public:
 		UCHECK(x < mWidth && y < mHeight);
 		return GetPixels() + (y * mWidth + x);
 	}
+	ColorT* GetPixel(Int2 xy) const
+	{
+		return GetPixel(xy.x, xy.y);
+	}
 	unsigned GetImageSizeInBytes() const
 	{
 		return mWidth * mHeight * sizeof(ColorT);
@@ -159,6 +163,7 @@ public:
 			SetPixel<true>(x, y0, thickness, color);
 		}
 	}
+	void DrawLineAA(int x1, int y1, int x2, int y2, ColorT color);
 	void DrawLine(int x1, int y1, int x2, int y2, unsigned thickness, ColorT color)
 	{
 		int steep = 0;
@@ -198,12 +203,14 @@ public:
 		SetPixel<true>(x2,y2, thickness, color);
 	}
 
+	
 	void BlendRect(unsigned x, unsigned y, unsigned w, unsigned h, ColorT color);
 	void DrawLine(int x0, int y0, int x1, int y1, ColorT color);
 	void FillCircle(unsigned x, unsigned y, unsigned radius, ColorT color);
 	void FillRect(unsigned x, unsigned y, unsigned w, unsigned h, ColorT color);
 	void DrawSurface(unsigned dstX, unsigned dstY, const CSurface* pSrc);
 	void DrawSurface(unsigned dstX, unsigned dstY, const CSurface* pSrc, unsigned srcX, unsigned srcY, unsigned w, unsigned h);
-	void DrawSurface(unsigned dstX, unsigned dstY, const CSurface* pSrc, unsigned rotationDegree, unsigned originX, unsigned originY);
-
+	void DrawSurface(unsigned dstX, unsigned dstY, const CSurface* pSrc, unsigned angleInDegrees, unsigned originX, unsigned originY);
+	void DrawSurfaceRotated(Int2 dstOffset, const CSurface* pSrc, int angleInDegrees, Int2 origin);
+	void DrawSurfaceRotatedCenter(Int2 dstOffet, const CSurface* pSrc, int rotationDegree);
 };

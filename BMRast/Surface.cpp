@@ -258,6 +258,92 @@ void CSurface::FillMandelbortFractal()
 	}
 }
 
+
+#define plot_(X,Y,D) *GetPixel(X, Y) = color
+
+#define ipart_(X) ((int)(X))
+#define round_(X) ((int)(((double)(X))+0.5))
+#define fpart_(X) (((double)(X))-(double)ipart_(X))
+#define rfpart_(X) (1.0-fpart_(X))
+
+#define swap_(a, b) std::swap(a, b)
+
+
+
+void CSurface::DrawLineAA(int x1, int y1, int x2, int y2, ColorT color)
+{
+	
+	float dx = (float)x2 - (float)x1;
+	float dy = (float)y2 - (float)y1;
+
+	if ( fabs(dx) > fabs(dy) ) {
+		if ( x2 < x1 ) {
+			swap_(x1, x2);
+			swap_(y1, y2);
+		}
+		float gradient = dy / dx;
+		float xend = round_(x1);
+		float yend = y1 + gradient*(xend - x1);
+		float xgap = rfpart_(x1 + 0.5);
+		int xpxl1 = xend;
+		int ypxl1 = ipart_(yend);
+		plot_(xpxl1, ypxl1, rfpart_(yend)*xgap);
+		plot_(xpxl1, ypxl1+1, fpart_(yend)*xgap);
+		float intery = yend + gradient;
+
+		xend = round_(x2);
+		yend = y2 + gradient*(xend - x2);
+		xgap = fpart_(x2+0.5);
+		int xpxl2 = xend;
+		int ypxl2 = ipart_(yend);
+		plot_(xpxl2, ypxl2, rfpart_(yend) * xgap);
+		plot_(xpxl2, ypxl2 + 1, fpart_(yend) * xgap);
+
+		int x;
+		for(x=xpxl1+1; x <= (xpxl2-1); x++) {
+			plot_(x, ipart_(intery), rfpart_(intery));
+			plot_(x, ipart_(intery) + 1, fpart_(intery));
+			intery += gradient;
+		}
+	} else {
+		if ( y2 < y1 ) {
+			swap_(x1, x2);
+			swap_(y1, y2);
+		}
+		float gradient = dx / dy;
+		float yend = round_(y1);
+		float xend = x1 + gradient*(yend - y1);
+		float ygap = rfpart_(y1 + 0.5);
+		int ypxl1 = yend;
+		int xpxl1 = ipart_(xend);
+		plot_(xpxl1, ypxl1, rfpart_(xend)*ygap);
+		plot_(xpxl1, ypxl1+1, fpart_(xend)*ygap);
+		float interx = xend + gradient;
+
+		yend = round_(y2);
+		xend = x2 + gradient*(yend - y2);
+		ygap = fpart_(y2+0.5);
+		int ypxl2 = yend;
+		int xpxl2 = ipart_(xend);
+		plot_(xpxl2, ypxl2, rfpart_(xend) * ygap);
+		plot_(xpxl2, ypxl2 + 1, fpart_(xend) * ygap);
+
+		int y;
+		for(y=ypxl1+1; y <= (ypxl2-1); y++) {
+			plot_(ipart_(interx), y, rfpart_(interx));
+			plot_(ipart_(interx) + 1, y, fpart_(interx));
+			interx += gradient;
+		}
+	}
+}
+
+#undef swap_
+#undef plot_
+#undef ipart_
+#undef fpart_
+#undef round_
+#undef rfpart_
+
 void CSurface::DrawLine(int x0, int y0, int x1, int y1, ColorT color)
 {
 	x0 = UClamp(x0, 0, mWidth - 1);
@@ -344,4 +430,101 @@ void CSurface::DrawSurface(unsigned dstX, unsigned dstY, const CSurface* pSrc, u
 {
 
 	
+}
+
+void CSurface::DrawSurfaceRotated(Int2 dstOffset, const CSurface* pSrc, int angleInDegrees, Int2 origin)
+{
+	float angleRadian = angleInDegrees * DEG2RAD;
+
+	float sinValue = sin(angleRadian);
+	float cosValue = cos(angleRadian);
+
+
+	Int2 leftTop = URotatePoint(0,0, sinValue, cosValue, origin.x, origin.y);
+	Int2 rightTop = URotatePoint(pSrc->mWidth, 0, sinValue,cosValue, origin.x, origin.y);
+	Int2 rightBottom = URotatePoint(pSrc->mWidth, pSrc->mHeight, sinValue, cosValue, origin.x, origin.y);
+	Int2 leftBottom = URotatePoint(0, pSrc->mHeight, sinValue, cosValue,  origin.x, origin.y);
+
+	Int2 minPoint = Int2::Min(leftTop, Int2::Min(rightTop, Int2::Min(rightBottom, leftBottom)));
+	Int2 maxPoint = Int2::Max(leftTop, Int2::Max(rightTop, Int2::Max(rightBottom, leftBottom)));
+
+	Int2 newSize = maxPoint - minPoint;
+
+	sinValue = sin(-angleRadian);
+	cosValue = cos(-angleRadian);
+
+
+	int sinI = (int)(sinValue * 2048);
+	int cosI = (int)(cosValue * 2048);
+
+	{
+		{
+			for(unsigned x = 0; x < newSize.x; x++)
+			{
+				for(unsigned y = 0; y < newSize.y;  y++)
+				{
+					Int2 p = Int2(x, y) + dstOffset;
+					if(p > Int2(0,0) && p < Int2(mWidth, mHeight))
+					{
+						ColorT* dstPixel = (ColorT*)GetPixel(p);
+						Int2 rotatedPoint = URotatePoint(x + minPoint.x, y + minPoint.y, sinValue, cosValue, origin.x, origin.y);
+
+						if(rotatedPoint >= Int2(0,0) && rotatedPoint < Int2(pSrc->Width(), pSrc->Height()))
+						{
+							ColorT* srcPixel = (ColorT*)pSrc->GetPixel(rotatedPoint.x, rotatedPoint.y);
+							*dstPixel = *srcPixel;
+						}
+					}
+
+				}
+			}
+		}
+	}
+}
+//////////////////////////////////////////////////////////////////////////
+void CSurface::DrawSurfaceRotatedCenter(Int2 dstOffest, const CSurface* pSrc, int rotationDegree)
+{
+	float angleRadian = rotationDegree * DEG2RAD;
+
+	float sinValue = sin(angleRadian);
+	float cosValue = cos(angleRadian);
+
+
+	Int2 leftTop = URotatePoint(0,0, sinValue, cosValue);
+	Int2 rightTop = URotatePoint(pSrc->mWidth, 0, sinValue,cosValue);
+	Int2 rightBottom = URotatePoint(pSrc->mWidth, pSrc->mHeight, sinValue, cosValue);
+	Int2 leftBottom = URotatePoint(0, pSrc->mHeight, sinValue, cosValue);
+
+	Int2 minPoint = Int2::Min(leftTop, Int2::Min(rightTop, Int2::Min(rightBottom, leftBottom)));
+	Int2 maxPoint = Int2::Max(leftTop, Int2::Max(rightTop, Int2::Max(rightBottom, leftBottom)));
+
+	Int2 newSize = maxPoint - minPoint;
+	Int2 halfSize = newSize / Int2(2, 2);
+
+	sinValue = sin(-angleRadian);
+	cosValue = cos(-angleRadian);
+
+
+	int sinI = (int)(sinValue * 2048);
+	int cosI = (int)(cosValue * 2048);
+
+	for(unsigned x = 0; x < newSize.x; x++)
+	{
+		for(unsigned y = 0; y < newSize.y;  y++)
+		{
+			Int2 p = Int2(x, y) + dstOffest - halfSize;
+			if(p > Int2(0,0) && p < Int2(mWidth, mHeight))
+			{
+				ColorT* dstPixel = (ColorT*)GetPixel(p);
+				Int2 rotatedPoint = URotatePoint(x + minPoint.x, y + minPoint.y, sinValue, cosValue);
+
+				if(rotatedPoint >= Int2(0,0) && rotatedPoint < Int2(pSrc->Width(), pSrc->Height()))
+				{
+					ColorT* srcPixel = (ColorT*)pSrc->GetPixel(rotatedPoint.x, rotatedPoint.y);
+					*dstPixel = *srcPixel;
+				}
+			}
+
+		}
+	}
 }
