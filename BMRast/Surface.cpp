@@ -334,6 +334,10 @@ inline uint32 rgba_interp(uint32 src, uint32 dst, uint32 t)
 		((dst >> 24) & 0xff) * t) << 16) & ~0xffffff)
 		);
 }
+inline uint32 UBiLerpRGBA(uint32 p00, uint32 p10, uint32 p01, uint32 p11, uint32 x, uint32 y)
+{
+	 return rgba_interp(rgba_interp(p00, p10, x), rgb_interp(p01, p11, x), y);
+}
 //using  float
 inline uint32 rgba_interpF(uint32 src, uint32 dst, uint32 t) 
 {
@@ -972,7 +976,7 @@ void CSurface::DrawSurfaceRotatedCenterAA(Int2 dstOffset, const CSurface* pSrc, 
 	float sinValue = sin(angleRadian);
 	float cosValue = cos(angleRadian);
 
-
+	//points in dst surface
 	Int2 leftTop = URotatePoint(0,0, sinValue, cosValue);
 	Int2 rightTop = URotatePoint(pSrc->mWidth, 0, sinValue,cosValue);
 	Int2 rightBottom = URotatePoint(pSrc->mWidth, pSrc->mHeight, sinValue, cosValue);
@@ -991,6 +995,8 @@ void CSurface::DrawSurfaceRotatedCenterAA(Int2 dstOffset, const CSurface* pSrc, 
 	int sinI = (int)(sinValue * 2048);
 	int cosI = (int)(cosValue * 2048);
 
+	Int2 srcSize(pSrc->Width(), pSrc->Height());
+
 	for(unsigned x = 0; x < newSize.x; x++)
 	{
 		for(unsigned y = 0; y < newSize.y;  y++)
@@ -1001,15 +1007,32 @@ void CSurface::DrawSurfaceRotatedCenterAA(Int2 dstOffset, const CSurface* pSrc, 
 				ColorT* dstPixel = (ColorT*)GetPixel(p);
 				Int2 rotatedPoint = URotatePoint(x + minPoint.x, y + minPoint.y, sinValue, cosValue);
 
-				if(rotatedPoint >= Int2(0,0) && rotatedPoint < Int2(pSrc->Width(), pSrc->Height()))
+				if(rotatedPoint >= Int2(0,0) && rotatedPoint < srcSize)
 				{
 					ColorT* srcPixel = (ColorT*)pSrc->GetPixel(rotatedPoint.x, rotatedPoint.y);
 					*dstPixel = *srcPixel;
+
+					if(rotatedPoint.x == 0 || rotatedPoint.x == srcSize.x-1)
+					{
+						//PerformAAPiexl(p.x, p.y);
+					}
+					if(rotatedPoint.y == 0 || rotatedPoint.y == srcSize.y - 1)
+					{
+						//PerformAAPiexl(p.x, p.y);
+					}
 				}
 			}
 
 		}
 	}
+
+	ColorT c = UMakeBGRAColor(0, 0, 255, 0);
+
+	//DrawLine(leftTop, rightTop, c);
+	//DrawLine(rightTop, rightBottom, c);
+	//DrawLine(rightBottom, leftBottom, c);
+	//DrawLine(leftBottom, leftTop, c);
+
 }
 
 void CSurface::DrawCircle(int x, int y, int radius, ColorT color)
@@ -1039,7 +1062,7 @@ void CSurface::PerformAAPiexl(int x, int y)
 	Int2 xy = Int2(x, y);
 	Int2 max = Int2(mWidth - 1, mHeight - 1);
 
-	bool bNeedsClamp = !(xy >= Int2(0,0) && xy < max);
+	bool bNeedsClamp = !(xy > Int2(0,0) && xy < max);
 
 	static const Int2 offsets[] = 
 	{
@@ -1288,6 +1311,61 @@ CSurface::ColorT CSurface::BilinearSample(Int2 xy) const
 
 }
 
+
+
+CSurface::ColorT CSurface::Sample2X(float x, float y)
+{
+	float intx = 0;
+	float inty = 0;
+
+	float fracX = modf(x, &intx);
+	float fracY = modf(y, &inty);
+
+	//fracX = fracX * 2 - 1;
+	//fracY = fracY * 2 - 1;
+
+	int tx = ((int)(fracX * 255)) & 255;
+	int ty = ((int)(fracY * 255)) & 255;
+
+	Int2 xy(x, y);
+
+	Int2 tl = xy - Int2(-1, -1);
+	Int2 tr = xy - Int2(1, -1);
+	Int2 br = xy - Int2(1, 1);
+	Int2 bl = xy - Int2(-1, 1);
+
+	Int2 max = Int2(mWidth - 1, mHeight - 1);
+
+	tl = Int2::Clamp(tl, Int2(0,0), max);
+	tr = Int2::Clamp(tr, Int2(0,0), max);
+	bl = Int2::Clamp(bl, Int2(0,0), max);
+	br = Int2::Clamp(br, Int2(0,0), max);
+
+	return UBiLerpRGBA(*GetPixel(tl), *GetPixel(tr), *GetPixel(bl), *GetPixel(br), tx, 128);
+}
+
+void CSurface::TriDrawHorizontalLine(int x0, int x1, int y, int thickness, ColorT color)
+{
+	
+	if (x0 > x1)
+	{
+		std::swap(x0, x1);
+	}
+
+	int firstx = x0;
+
+	for (; x0 <= x1; x0++)
+	{
+		if(x0 == firstx || x0 == x1)
+			color = UMakeBGRAColor(0,0,255, 0);
+		else
+			color = UMakeBGRAColor(255, 255, 255, 255);
+
+
+		SetPixel(x0, y, thickness, color);
+	}
+}
+
 void CSurface::DrawSpansBetweenEdges(Edge e1, Edge e2, ColorT color)
 {
 	// calculate difference between the y coordinates
@@ -1328,8 +1406,48 @@ void CSurface::DrawSpansBetweenEdges(Edge e1, Edge e2, ColorT color)
 		DrawSpan(span, y);
 		*/
 
+		bool isFirstOrLastY = (y == e2.Y1 || y == e2.Y2 - 1);
 
-		DrawHorizontalLine(e1.X1 + (int)(e1xdiff * factor1), e2.X1 + (int)(e2xdiff * factor2), y, 1, color);
+		float xx0 = e1.X1 + (e1xdiff * factor1);	//the first x
+		float xx1 = e2.X1 + (e2xdiff * factor2);	//the last x
+
+		int x0 = xx0;
+		int x1 = xx1;
+
+		if (x0 > x1)
+		{
+			std::swap(x0, x1);
+		}
+
+		int firstx = x0;
+
+		for (; x0 <= x1; x0++)
+		{
+			bool isFirstOrLastX = x0 == firstx || x0 == x1;
+
+			if(x0 == firstx )
+			{
+				float intPart = 0;
+				float fracPart = modf(xx0, &intPart);
+				
+				//2x ms
+				ColorT c = Sample2X(xx0, y);
+				//fracPart *= 255;
+
+				//SetPixel(x0, y, 1, color);
+
+				SetPixel(x0, y, 1, c);
+			}
+			else
+			{
+				color = UMakeBGRAColor(255, 255, 255, 255);
+				SetPixel(x0, y, 1, color);
+			}
+
+
+			
+		}
+
 		// increase factors
 		factor1 += factorStep1;
 		factor2 += factorStep2;

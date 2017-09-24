@@ -8,6 +8,10 @@
 
 #define NOMINMAX
 
+#define UIPart(X) ((int)(X))
+#define URoundF(X) ((int)(((float)(X))+0.5))
+#define UFPart(X) (((float)(X))-(float)UIPart(X))
+
 typedef unsigned char uint8;
 typedef unsigned short uint16;
 typedef unsigned uint32;

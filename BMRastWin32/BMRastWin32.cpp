@@ -75,18 +75,21 @@ void UFillSurface()
 	{
 		//gSurface->FillMandelbortFractal();
 
-		gSurface->DrawSpansBetweenEdges(Edge(128, 32, 99, 99), Edge(128 + 100, 32, 99 + 100, 99), UMakeBGRAColor(0,0,255, 0));
+		gSurface->DrawSurfaceRotatedCenter(Int2(128, 128), gSurfaceMandelbort, 30);
+		gSurface->DrawSurfaceRotatedCenterAA(Int2(400, 128), gSurfaceMandelbort, 30);
+		
+		//gSurface->DrawSpansBetweenEdges(Edge(128, 32, 99, 99), Edge(128 + 100, 32, 99 + 100, 99), UMakeBGRAColor(0,0,255, 0));
 
-		if(1)
+		if(0)
 		{
 			{
 				Int2 c = Int2(200, 200);
 				gSurface->FillRibbon(c, c + URotatePoint(Int2(100, 100), rand() * DEG2RAD), 8, 0xFF);
 			}
 			Int2 center = Int2(200, 200);
-			gSurface->FillTriangle2(center - Int2(100, 0), center + Int2(100, 0), center - Int2(0, 64), 0xFFffFFff);
+			gSurface->FillTriangle2(center - Int2(100, 0), center + Int2(100, 40), center - Int2(0, 64), 0xFFffFFff);
 			center = center + Int2(300, 0);
-			gSurface->FillTriangleF(center - Int2(100, 0), center + Int2(100, 0), center - Int2(0, 64), 0xFFffFFff);
+			gSurface->FillTriangleF(center - Int2(100, 0), center + Int2(100, 40), center - Int2(0, 64), 0xFFffFFff);
 
 /*
 			center = center + Int2(000, 200);

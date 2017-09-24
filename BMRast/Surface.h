@@ -116,6 +116,10 @@ public:
 	{
 		DrawLine(a.x, a.y, b.x, b.y, thickness, color);
 	}
+	void DrawLine(Int2 a, Int2 b, ColorT color)
+	{
+		DrawLine(a.x, a.y, b.x, b.y, 1, color);
+	}
 	void DrawGradientLine(Int2 a, Int2 b, unsigned thickness, ColorT color);
 	void BlendRect(unsigned x, unsigned y, unsigned w, unsigned h, ColorT color);
 	//void DrawLine(int x0, int y0, int x1, int y1, ColorT color);
@@ -153,9 +157,11 @@ public:
 		return BilinearSample(Int2(x, y));
 	}
 
+	ColorT Sample2X(float x, float y);
 
-	
+	void TriDrawHorizontalLine(int x0, int x1, int y, int thickness, ColorT color);
 	void DrawSpansBetweenEdges(Edge a, Edge b, ColorT color);
 	void FillTriangle2(Int2 a, Int2 b, Int2 c, ColorT color);
+	
 	
 };

@@ -11,6 +11,7 @@
 #undef min
 #endif
 
+
 struct Int2
 {
 	int x, y;
@@ -67,6 +68,8 @@ ZZInt2CmpInt2(>)
 ZZInt2CmpInt2(<)
 ZZInt2CmpInt2(>=)
 ZZInt2CmpInt2(<=)
+ZZInt2CmpInt2(==)
+ZZInt2CmpInt2(!=)
 
 
 
