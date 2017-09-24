@@ -52,3 +52,10 @@ inline uint32 UMakeBGRAColor(uint32 b, uint32 g, uint32 r, uint32 a)
 	return ((b) | (g << 8) | (r << 16) | (a << 24));
 }
 
+inline void UExtractBGRAColor(uint32 bgra, unsigned& b, unsigned& g, unsigned& r, unsigned& a)
+{
+	b = bgra & 0xFF;
+	g = (bgra >> 8) & 0xFF;
+	r = (bgra >> 16) & 0xFF;
+	a = (bgra >> 24) & 0xFF;
+}

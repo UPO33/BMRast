@@ -112,11 +112,22 @@ public:
 	void DrawLineAA(Int2 a, Int2 b, ColorT color, int thickness);
 
 	void DrawLine(int x1, int y1, int x2, int y2, unsigned thickness, ColorT color);
-
+	void DrawLine(Int2 a, Int2 b, unsigned thickness, ColorT color)
+	{
+		DrawLine(a.x, a.y, b.x, b.y, thickness, color);
+	}
 	void DrawGradientLine(Int2 a, Int2 b, unsigned thickness, ColorT color);
 	void BlendRect(unsigned x, unsigned y, unsigned w, unsigned h, ColorT color);
 	//void DrawLine(int x0, int y0, int x1, int y1, ColorT color);
 	void FillCircle(unsigned x, unsigned y, unsigned radius, ColorT color);
+	void FillTriangle(Int2 a, Int2 b, Int2 c, ColorT color);
+	void FillTriangleF(Float2 a, Float2 b, Float2 c, ColorT color);
+	void FillTriangleAA(Int2 a, Int2 b, Int2 c, ColorT color);
+	void FillTriangle2(int x0, int y0, int x1, int y1, int x2, int y2, ColorT color);
+
+	void FillQuad(Int2 a, Int2 b, Int2 c, Int2 d, ColorT color);
+	void FillQuadAA(Int2 a, Int2 b, Int2 c, Int2 d, ColorT color);
+
 	void FillRect(unsigned x, unsigned y, unsigned w, unsigned h, ColorT color);
 	void DrawSurface(unsigned dstX, unsigned dstY, const CSurface* pSrc);
 	void DrawSurface(unsigned dstX, unsigned dstY, const CSurface* pSrc, unsigned srcX, unsigned srcY, unsigned w, unsigned h);
@@ -126,7 +137,25 @@ public:
 	void DrawSurfaceRotatedCenterAA(Int2 dstOffset, const CSurface* pSrc, int rotationDegree);
 	void DrawCircle(int x, int y, int radius, ColorT color);
 
-	ColorT BilinearSample(Int2 xy) const;
+	void PerformAAPiexl(int x, int y);
+	void PerformAAPiexl4(int x, int y);
+	void PerformLineAA(int x1, int y1, int x2, int y2, ColorT color);
+	void PerformLineAA(Int2 a, Int2 b, ColorT color)
+	{
+		PerformLineAA(a.x, a.y, b.x, b.y, color);
+	}
 
+	void FillRibbon(Int2 a, Int2 b, int thickness, ColorT color);
+	void DrawRibbon(Int2 a, Int2 b, int thickness, ColorT color);
+	ColorT BilinearSample(Int2 xy) const;
+	ColorT BilinearSample(int x, int y) const
+	{
+		return BilinearSample(Int2(x, y));
+	}
+
+
+	
+	void DrawSpansBetweenEdges(Edge a, Edge b, ColorT color);
+	void FillTriangle2(Int2 a, Int2 b, Int2 c, ColorT color);
 	
 };

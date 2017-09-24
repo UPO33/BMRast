@@ -519,12 +519,11 @@ void CSurface::DrawLineAA(int x1, int y1, int x2, int y2, ColorT color)
 
 void CSurface::DrawLineAA(Int2 a, Int2 b, ColorT color, int thickness)
 {
-	Int2 delta = b - a;
-	Int2 n = UGetLineNormal(a, b) / Int2(300, 300);
-
-	DrawLineAA(a - n, b - n, color);
 	DrawLineAA(a, b, color);
-	DrawLineAA(a + n, b + n, color);
+
+	//DrawLineAA(a - n, b - n, color);
+	//DrawLineAA(a, b, color);
+	//DrawLineAA(a + n, b + n, color);
 }
 
 #undef swap_
@@ -641,6 +640,188 @@ void CSurface::BlendRect(unsigned x, unsigned y, unsigned w, unsigned h, ColorT 
 	}
 }
 
+void CSurface::FillTriangle(Int2 t0, Int2 t1, Int2 t2, ColorT color)
+{
+	if (t0.y>t1.y) std::swap(t0, t1);
+	if (t0.y>t2.y) std::swap(t0, t2);
+	if (t1.y>t2.y) std::swap(t1, t2);
+
+	int total_height = t2.y - t0.y;
+
+	Int2 T1_T0 = (t1 - t0);
+	Int2 T2_T0 = (t2 - t0);
+	Int2 T2_T1 = (t2 - t1);
+
+	for (int y = t0.y; y <= t1.y; y++) 
+	{
+		int segment_height = t1.y - t0.y + 1;
+		float alpha = (float)(y - t0.y) / total_height;
+		float beta = (float)(y - t0.y) / segment_height;
+		Int2 A = t0 + T2_T0 *alpha;
+		Int2 B = t0 + T1_T0 *beta;
+		if (A.x>B.x)
+			std::swap(A, B);
+		for (int j = A.x; j <= B.x; j++) 
+		{
+			ColorT col = color;
+// 			if(j == A.x || j == B.x)
+// 			{
+// 				ColorT pPixel = *GetPixel(j, y);
+// 				col = rgba_interp(pPixel, color, 128);
+// 				//col = UMakeBGRAColor(0,0,255, 0);
+// 			}
+			
+			SetPixel(j, y,  col);
+			//*((unsigned int*)&image[y*Stride + (j * BitDepth)]) = color.value;
+		}
+	}
+	for (int y = t1.y; y <= t2.y; y++) 
+	{
+		int segment_height = t2.y - t1.y + 1;
+		float alpha = (float)(y - t0.y) / total_height;
+		float beta = (float)(y - t1.y) / segment_height;
+		Int2 A = t0 + T2_T0 *alpha;
+		Int2 B = t1 + T2_T1 *beta;
+		if (A.x>B.x)
+			std::swap(A, B);
+		for (int j = A.x; j <= B.x; j++) 
+		{
+			ColorT col = color;
+// 			if(j == A.x || j == B.x)
+// 			{
+// 				ColorT pPixel = *GetPixel(j, y);
+// 				col = rgba_interp(pPixel, color, 128);
+// 			}
+
+			SetPixel(j, y, col);
+			//*((unsigned int*)&image[y*Stride + (j * BitDepth)]) = color.value;
+		}
+	}
+}
+
+
+
+void CSurface::FillTriangleF(Float2 t0, Float2 t1, Float2 t2, ColorT color)
+{
+	if (t0.y>t1.y) std::swap(t0, t1);
+	if (t0.y>t2.y) std::swap(t0, t2);
+	if (t1.y>t2.y) std::swap(t1, t2);
+
+	int total_height = t2.y - t0.y;
+
+	Float2 T1_T0 = (t1 - t0);
+	Float2 T2_T0 = (t2 - t0);
+	Float2 T2_T1 = (t2 - t1);
+
+	for (int y = t0.y; y <= t1.y; y++) 
+	{
+		int segment_height = t1.y - t0.y;
+		float alpha = (float)(y - t0.y) / total_height;
+		float beta = (float)(y - t0.y) / segment_height;
+		Float2 A = t0 + T2_T0 *alpha;
+		Float2 B = t0 + T1_T0 *beta;
+		if (A.x>B.x)
+			std::swap(A, B);
+		for (int j = A.x; j <= B.x; j++) 
+		{
+			ColorT col = color;
+// 			if(j == A.x || j == B.x)
+// 			{
+// 				ColorT pPixel = *GetPixel(j, y);
+// 				col = rgba_interp(pPixel, color, 128);
+// 				//col = UMakeBGRAColor(0,0,255, 0);
+// 			}
+			
+			SetPixel(j, y,  col);
+			//*((unsigned int*)&image[y*Stride + (j * BitDepth)]) = color.value;
+		}
+	}
+	for (int y = t1.y; y <= t2.y; y++) 
+	{
+		int segment_height = t2.y - t1.y;
+		float alpha = (float)(y - t0.y) / total_height;
+		float beta = (float)(y - t1.y) / segment_height;
+		Float2 A = t0 + T2_T0 *alpha;
+		Float2 B = t1 + T2_T1 *beta;
+		if (A.x>B.x)
+			std::swap(A, B);
+		for (int j = A.x; j <= B.x; j++) 
+		{
+			ColorT col = color;
+// 			if(j == A.x || j == B.x)
+// 			{
+// 				ColorT pPixel = *GetPixel(j, y);
+// 				col = rgba_interp(pPixel, color, 128);
+// 			}
+
+			SetPixel(j, y, col);
+			//*((unsigned int*)&image[y*Stride + (j * BitDepth)]) = color.value;
+		}
+	}
+}
+
+
+
+
+
+void CSurface::FillTriangleAA(Int2 a, Int2 b, Int2 c, ColorT color)
+{
+	FillTriangleF(a, b, c, color);
+	//color = UMakeBGRAColor(255, 0,0,0);
+	PerformLineAA(a, b, color);
+	PerformLineAA(b, c, color);
+	PerformLineAA(c, a, color);
+}
+
+
+
+void CSurface::FillTriangle2(Int2 a, Int2 b, Int2 c, ColorT color)
+{
+	// create edges for the triangle
+	Edge edges[3] = {
+		Edge((int)a.x, (int)a.y,(int)b.x, (int)b.y),
+		Edge((int)b.x, (int)b.y,(int)c.x, (int)c.y),
+		Edge((int)c.x, (int)c.y,(int)a.x, (int)a.y)
+	};
+
+	int maxLength = 0;
+	int longEdge = 0;
+
+	// find edge with the greatest length in the y axis
+	for(int i = 0; i < 3; i++) {
+		int length = edges[i].Y2 - edges[i].Y1;
+		if(length > maxLength) {
+			maxLength = length;
+			longEdge = i;
+		}
+	}
+
+	int shortEdge1 = (longEdge + 1) % 3;
+	int shortEdge2 = (longEdge + 2) % 3;
+
+	// draw spans between edges; the long edge can be drawn
+	// with the shorter edges to draw the full triangle
+	DrawSpansBetweenEdges(edges[longEdge], edges[shortEdge1], color);
+	DrawSpansBetweenEdges(edges[longEdge], edges[shortEdge2], color);
+};
+
+
+void CSurface::FillQuad(Int2 a, Int2 b, Int2 c, Int2 d, ColorT color)
+{
+	FillTriangleF(a, b, c, color);
+	FillTriangleF(c, d, a, color);
+}
+void CSurface::FillQuadAA(Int2 a, Int2 b, Int2 c, Int2 d, ColorT color)
+{
+	FillTriangleF(a, b, c, color);
+	FillTriangleF(c, d, a, color);
+	
+	PerformLineAA(a, b, color);
+	PerformLineAA(b, c, color);
+	PerformLineAA(c, d, color);
+	PerformLineAA(d, a, color);
+}
+
 //////////////////////////////////////////////////////////////////////////
 void CSurface::FillRect(unsigned x, unsigned y, unsigned w, unsigned h, ColorT color)
 {
@@ -676,6 +857,7 @@ void CSurface::DrawSurface(unsigned dstX, unsigned dstY, const CSurface* pSrc)
 			*GetPixel(x, y) = *(pSrc->GetPixel(x - dstX, y - dstY));
 		}
 	}
+
 }
 
 void CSurface::DrawSurface(unsigned dstX, unsigned dstY, const CSurface* pSrc, unsigned srcX, unsigned srcY, unsigned w, unsigned h)
@@ -781,6 +963,8 @@ void CSurface::DrawSurfaceRotatedCenter(Int2 dstOffest, const CSurface* pSrc, in
 	}
 }
 
+//////////////////////////////////////////////////////////////////////////
+//#incomplete
 void CSurface::DrawSurfaceRotatedCenterAA(Int2 dstOffset, const CSurface* pSrc, int rotationDegree)
 {
 	float angleRadian = rotationDegree * DEG2RAD;
@@ -819,8 +1003,8 @@ void CSurface::DrawSurfaceRotatedCenterAA(Int2 dstOffset, const CSurface* pSrc, 
 
 				if(rotatedPoint >= Int2(0,0) && rotatedPoint < Int2(pSrc->Width(), pSrc->Height()))
 				{
-					ColorT srcPixel = pSrc->BilinearSample(Int2(rotatedPoint.x, rotatedPoint.y));
-					*dstPixel = srcPixel;
+					ColorT* srcPixel = (ColorT*)pSrc->GetPixel(rotatedPoint.x, rotatedPoint.y);
+					*dstPixel = *srcPixel;
 				}
 			}
 
@@ -832,18 +1016,322 @@ void CSurface::DrawCircle(int x, int y, int radius, ColorT color)
 {
 }
 
-CSurface::ColorT CSurface::BilinearSample(Int2 xy) const
+#if 1
+#define plot_(X,Y,D)\
+	if(IsInBound(X, Y)){\
+	ColorT cc = BilinearSample(X, Y);\
+	SetPixel(X, Y, cc);}
+
+
+
+
+
+
+#define ipart_(X) ((int)(X))
+#define round_(X) ((int)(((double)(X))+0.5))
+#define fpart_(X) (((double)(X))-(double)ipart_(X))
+#define rfpart_(X) (1.0-fpart_(X))
+
+#define swap_(a, b) std::swap(a, b)
+
+void CSurface::PerformAAPiexl(int x, int y)
 {
+	Int2 xy = Int2(x, y);
+	Int2 max = Int2(mWidth - 1, mHeight - 1);
+
+	bool bNeedsClamp = !(xy >= Int2(0,0) && xy < max);
+
+	static const Int2 offsets[] = 
+	{
+		Int2(0    , 0 - 1),
+		//Int2(0 - 1, 0 - 1),
+		Int2(0 + 1, 0 - 1),
+
+		Int2(0    , 0    ),
+		Int2(0 - 1, 0    ),
+		Int2(0 + 1, 0    ),
+
+		Int2(0    , 0 + 1),
+		Int2(0 - 1, 0 + 1),
+		//Int2(0 + 1, 0 + 1)
+	};
+
+	static const int N = _countof(offsets);
+
+
+	
+
+	int r = 0, g = 0, b = 0, a = 0;
+
+	for(unsigned i = 0; i < N; i++)
+	{
+		Int2 p = offsets[i] + xy;
+		if(bNeedsClamp)
+		{
+			p = Int2::Clamp(p, Int2(0, 0), max);
+		}
+
+
+		ColorT pixel = *GetPixel(p);
+
+		unsigned eb, eg, er, ea;
+		UExtractBGRAColor(pixel, eb, eg, er, ea);
+
+		r += er;
+		g += eg;
+		b += eb;
+		a += ea;
+	}
+
+	r = (int)(r / N);
+	g = (int)(g / N);
+	b = (int)(b / N);
+
+	r &= 0xFF;
+	g &= 0xFF;
+	b &= 0xFF;
+	
+	SetPixel(x, y, UMakeBGRAColor(b, g, r, a));
+}
+
+void CSurface::PerformAAPiexl4(int x, int y)
+{
+	if(0)
+	{
+		PerformAAPiexl(x    , y    );
+		PerformAAPiexl(x + 1, y    );
+		PerformAAPiexl(x + 1, y + 1);
+		PerformAAPiexl(x    , y + 1);
+	}
+	else 
+	{
+		PerformAAPiexl(x    , y - 1);
+		PerformAAPiexl(x - 1, y - 1);
+		PerformAAPiexl(x + 1, y - 1);
+
+		PerformAAPiexl(x    , y    );
+		PerformAAPiexl(x - 1, y    );
+		PerformAAPiexl(x + 1, y    );
+
+		PerformAAPiexl(x    , y + 1);
+		PerformAAPiexl(x - 1, y + 1);
+		PerformAAPiexl(x + 1, y + 1);
+	}
+	
+
+
+
+}
+
+//////////////////////////////////////////////////////////////////////////
+void CSurface::PerformLineAA(int x1, int y1, int x2, int y2, ColorT color)
+{
+
+#if 1
+	int steep = 0;
+	int sx    = ((x2 - x1) > 0) ? 1 : -1;
+	int sy    = ((y2 - y1) > 0) ? 1 : -1;
+	int dx    = abs(x2 - x1);
+	int dy    = abs(y2 - y1);
+
+	if (dy > dx)
+	{
+		std::swap(x1,y1);
+		std::swap(dx,dy);
+		std::swap(sx,sy);
+
+		steep = 1;
+	}
+
+	int e = 2 * dy - dx;
+
+	for (int i = 0; i < dx; ++i)
+	{
+		if (steep)
+			PerformAAPiexl4(y1, x1);
+		else
+			PerformAAPiexl4(x1, y1);
+
+		while (e >= 0)
+		{
+			y1 += sy;
+			e -= (dx << 1);
+		}
+
+		x1 += sx;
+		e  += (dy << 1);
+	}
+
+	//PerformAAPiexl(x2,y2);
+
+#else
+	float dx = (float)x2 - (float)x1;
+	float dy = (float)y2 - (float)y1;
+
+	if ( fabs(dx) > fabs(dy) ) {
+		if ( x2 < x1 ) {
+			swap_(x1, x2);
+			swap_(y1, y2);
+		}
+		float gradient = dy / dx;
+		float xend = round_(x1);
+		float yend = y1 + gradient*(xend - x1);
+		float xgap = rfpart_(x1 + 0.5);
+		int xpxl1 = xend;
+		int ypxl1 = ipart_(yend);
+		plot_(xpxl1, ypxl1, rfpart_(yend)*xgap);
+		plot_(xpxl1, ypxl1+1, fpart_(yend)*xgap);
+		float intery = yend + gradient;
+
+		xend = round_(x2);
+		yend = y2 + gradient*(xend - x2);
+		xgap = fpart_(x2+0.5);
+		int xpxl2 = xend;
+		int ypxl2 = ipart_(yend);
+		plot_(xpxl2, ypxl2, rfpart_(yend) * xgap);
+		plot_(xpxl2, ypxl2 + 1, fpart_(yend) * xgap);
+
+		int x;
+		for(x=xpxl1+1; x <= (xpxl2-1); x++) {
+			plot_(x, ipart_(intery), rfpart_(intery));
+			plot_(x, ipart_(intery) + 1, fpart_(intery));
+			intery += gradient;
+		}
+	} else {
+		if ( y2 < y1 ) {
+			swap_(x1, x2);
+			swap_(y1, y2);
+		}
+		float gradient = dx / dy;
+		float yend = round_(y1);
+		float xend = x1 + gradient*(yend - y1);
+		float ygap = rfpart_(y1 + 0.5);
+		int ypxl1 = yend;
+		int xpxl1 = ipart_(xend);
+		plot_(xpxl1, ypxl1, rfpart_(xend)*ygap);
+		plot_(xpxl1, ypxl1+1, fpart_(xend)*ygap);
+		float interx = xend + gradient;
+
+		yend = round_(y2);
+		xend = x2 + gradient*(yend - y2);
+		ygap = fpart_(y2+0.5);
+		int ypxl2 = yend;
+		int xpxl2 = ipart_(xend);
+		plot_(xpxl2, ypxl2, rfpart_(xend) * ygap);
+		plot_(xpxl2, ypxl2 + 1, fpart_(xend) * ygap);
+
+		int y;
+		for(y=ypxl1+1; y <= (ypxl2-1); y++) {
+			plot_(ipart_(interx), y, rfpart_(interx));
+			plot_(ipart_(interx) + 1, y, fpart_(interx));
+			interx += gradient;
+		}
+	}
+#endif
+
+#undef swap_
+#undef plot_
+#undef ipart_
+#undef fpart_
+#undef round_
+#undef rfpart_
+#endif
+}
+
+//////////////////////////////////////////////////////////////////////////
+void CSurface::FillRibbon(Int2 a, Int2 b, int thickness, ColorT color)
+{
+	Float2 lineN = Float2(UGetLineNormal(a, b));
+	lineN.Normalize();
+	Int2 offset = (Int2)(lineN * thickness);
+
+	//Edge e0(a + offset, a - offset);
+	//Edge e1(b + offset, b - offset);
+	Edge e0(a + offset, b + offset);
+	Edge e1(a - offset, b - offset);
+	DrawSpansBetweenEdges(e0, e1, color);
+
+}
+
+//////////////////////////////////////////////////////////////////////////
+void CSurface::DrawRibbon(Int2 a, Int2 b, int thickness, ColorT color)
+{
+	Float2 lineN = Float2(UGetLineNormal(a, b));
+	lineN.Normalize();
+	Int2 offset = (Float2)(lineN * thickness);
+
+	DrawLine(a + offset, a - offset, 1, color);
+	DrawLine(b + offset, b - offset, 1, color);
+
+	DrawLine(a + offset, b + offset, 1, color);
+	DrawLine(a - offset, b - offset, 1, color);
+}
+
+CSurface::ColorT CSurface::BilinearSample(Int2 xy) const
+  {
 	Int2 tl = xy - Int2(-1, -1);
 	Int2 tr = xy - Int2(1, -1);
 	Int2 br = xy - Int2(1, 1);
 	Int2 bl = xy - Int2(-1, 1);
 
+	Int2 max = Int2(mWidth - 1, mHeight - 1);
 
+	tl = Int2::Clamp(tl, Int2(0,0), max);
+	tr = Int2::Clamp(tr, Int2(0,0), max);
+	bl = Int2::Clamp(bl, Int2(0,0), max);
+	br = Int2::Clamp(br, Int2(0,0), max);
 
 
 	return rgba_interp(
 		rgba_interp(*GetPixel(tl), *GetPixel(br), 128), 
 		rgba_interp(*GetPixel(tr), *GetPixel(bl), 128), 128);
 
+}
+
+void CSurface::DrawSpansBetweenEdges(Edge e1, Edge e2, ColorT color)
+{
+	// calculate difference between the y coordinates
+	// of the first edge and return if 0
+	float e1ydiff = (float)(e1.Y2 - e1.Y1);
+	if(e1ydiff == 0.0f)
+		return;
+
+	// calculate difference between the y coordinates
+	// of the second edge and return if 0
+	float e2ydiff = (float)(e2.Y2 - e2.Y1);
+	if(e2ydiff == 0.0f)
+		return;
+
+	// calculate differences between the x coordinates
+	// and colors of the points of the edges
+	float e1xdiff = (float)(e1.X2 - e1.X1);
+	float e2xdiff = (float)(e2.X2 - e2.X1);
+	//Color e1colordiff = (e1.Color2 - e1.Color1);
+	//Color e2colordiff = (e2.Color2 - e2.Color1);
+
+	// calculate factors to use for interpolation
+	// with the edges and the step values to increase
+	// them by after drawing each span
+	float factor1 = (float)(e2.Y1 - e1.Y1) / e1ydiff;
+	float factorStep1 = 1.0f / e1ydiff;
+	float factor2 = 0.0f;
+	float factorStep2 = 1.0f / e2ydiff;
+
+	// loop through the lines between the edges and draw spans
+	for(int y = e2.Y1; y < e2.Y2; y++) 
+	{
+		/*// create and draw span
+		Span span(e1.Color1 + (e1colordiff * factor1),
+			e1.X1 + (int)(e1xdiff * factor1),
+			e2.Color1 + (e2colordiff * factor2),
+			e2.X1 + (int)(e2xdiff * factor2));
+		DrawSpan(span, y);
+		*/
+
+
+		DrawHorizontalLine(e1.X1 + (int)(e1xdiff * factor1), e2.X1 + (int)(e2xdiff * factor2), y, 1, color);
+		// increase factors
+		factor1 += factorStep1;
+		factor2 += factorStep2;
+	}
 }

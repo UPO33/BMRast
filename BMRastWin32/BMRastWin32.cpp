@@ -31,10 +31,10 @@ enum ETest
 {
 	ET_LineAALine,
 	ET_Blend,
-
+	ET_TriAA,
 	ET_Max
 };
-ETest gTest = ET_Blend;
+ETest gTest = ET_TriAA;
 
 void UFillSurface()
 {
@@ -45,15 +45,7 @@ void UFillSurface()
 // 		gSurface->DrawLine(rand() % 1000, rand() % 1000, rand() % 1000, rand() % 1000, rand() % 8, RGB(0, 255, 0));
 // 		gSurface->DrawLineAA(rand() % 1000, rand() % 1000, rand() % 1000, rand() % 1000, RGB(0, 0, 255));
 // 	}
-	{
 
-		gSurface->DrawSurfaceRotatedCenterAA(Int2(128, 128), gSurfaceMandelbort, 30);
-		//gSurface->DrawSurfaceRotatedCenterAA(Int2(333, 333), gSurfaceMandelbort, 30);
-		gSurface->DrawLineAA(Int2(0,0), Int2(300, 300),  UMakeBGRAColor(0,0, 255, 0), 3);
-		
-	}
-
-	return;
 
 	//////////////////////////////////////////////////////////////////////////
 	if(gTest == ET_LineAALine)
@@ -79,7 +71,48 @@ void UFillSurface()
 
 		return;
 	}
-	
+	if(gTest == ET_TriAA)
+	{
+		//gSurface->FillMandelbortFractal();
+
+		gSurface->DrawSpansBetweenEdges(Edge(128, 32, 99, 99), Edge(128 + 100, 32, 99 + 100, 99), UMakeBGRAColor(0,0,255, 0));
+
+		if(1)
+		{
+			{
+				Int2 c = Int2(200, 200);
+				gSurface->FillRibbon(c, c + URotatePoint(Int2(100, 100), rand() * DEG2RAD), 8, 0xFF);
+			}
+			Int2 center = Int2(200, 200);
+			gSurface->FillTriangle2(center - Int2(100, 0), center + Int2(100, 0), center - Int2(0, 64), 0xFFffFFff);
+			center = center + Int2(300, 0);
+			gSurface->FillTriangleF(center - Int2(100, 0), center + Int2(100, 0), center - Int2(0, 64), 0xFFffFFff);
+
+/*
+			center = center + Int2(000, 200);
+			gSurface->FillTriangle(center - Int2(90, 0), center + Int2(44, 30), center - Int2(0, 90), 0xFFffFFff);
+			center = center + Int2(0, 100);
+			gSurface->FillTriangleAA(center - Int2(90, 0), center + Int2(44, 30), center - Int2(0, 90), 0xFFffFFff);
+*/
+		}
+		if(0)
+		{
+			Int2 points[4] = 
+			{
+				Int2(10, 0), Int2(120, 0), Int2(140, 120), Int2(0,133)
+			};
+			unsigned rotation = rand() % 360;
+			for (unsigned i = 0; i < 4; i++)
+			{
+				points[i] = Int2(255, 255) +  URotatePoint(points[i], rotation * DEG2RAD, 0, 0);
+			}
+			Int2 offset = Int2(200, 0);
+			gSurface->FillQuad(points[0], points[1], points[2], points[3], 0xFFFF);
+			gSurface->FillQuadAA(points[0] + offset, points[1] + offset, points[2] + offset, points[3] + offset, 0xFFFF);
+			//gSurface->FillRibbon(Int2(128, 128), Int2(500, 400), 0xFFff0000);
+		}
+		return;
+	}
 	static unsigned gRotation = 0;
 
 	
